@@ -15,7 +15,7 @@ class QuoteGenerator {
 
     private val mathContext = MathContext(2)
     private val random = Random()
-    private val prices = mutableListOf(
+    private val prices = listOf(
         Quote("CTXS", 82.26),
         Quote("DELL", 63.74),
         Quote("GOOG", 847.24),
