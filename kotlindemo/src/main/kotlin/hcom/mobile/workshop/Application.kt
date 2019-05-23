@@ -1,15 +1,15 @@
 package hcom.mobile.workshop
 
 import hcom.mobile.workshop.configuration.routerBeanDefinitions
+import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.builder.SpringApplicationBuilder
+import org.springframework.context.ApplicationContextInitializer
+import org.springframework.context.support.GenericApplicationContext
+import org.springframework.stereotype.Component
 
 @SpringBootApplication
 open class QuotesApplication
 
 fun main(args: Array<String>) {
-    SpringApplicationBuilder()
-        .initializers(routerBeanDefinitions)
-        .sources(QuotesApplication::class.java)
-        .run(*args)
+    SpringApplication.run(QuotesApplication::class.java, *args)
 }
