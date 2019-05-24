@@ -18,6 +18,7 @@ Useful articles:
   * `kotlin-stdlib`
   * `kotlinx-coroutines-core`
   * `spring-boot-starter-webflux`
+  * `jackson-module-kotlin` (Jackson is having a hard time deserializing Kotlin data classes without this)
 * Modify the `server.port` property to 8081
 
 #### Create RestController
