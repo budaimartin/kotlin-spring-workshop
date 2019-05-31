@@ -4,14 +4,11 @@ import java.math.BigDecimal
 import java.math.MathContext
 import java.time.Instant
 
-data class Quote(val ticker: String, val price: BigDecimal) {
-    lateinit var instant: Instant
+data class Quote(val ticker: String, val price: BigDecimal, val instant: Instant = Instant.now()) {
 
     companion object {
         private val MATH_CONTEXT = MathContext(2)
     }
 
-
-    // TODO: constructor(ticker: String, price: Double)
-    // TODO: what about equals hashcode? (because of lateinit var instant: Instant)
+    constructor(ticker: String, price: Double) : this(ticker, BigDecimal(price, MATH_CONTEXT))
 }
