@@ -141,4 +141,4 @@ fun fetchQuotes() = sequence {
 }
 ```
 
-* Next time we will try [`generateQuotes`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/generate-sequence.html) to avoid the ~good~ old `while(true)`, and find out something for delaying.
+* Next time we will try [`generateSequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/generate-sequence.html) to avoid the ~good~ old `while(true)`, and find out something for delaying.
