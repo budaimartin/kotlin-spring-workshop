@@ -1,8 +1,8 @@
 package hcom.mobile.workshop.demostockquotes.domain
 
-import java.time.Instant
 import java.math.BigDecimal
 import java.math.MathContext
+import java.time.Instant
 
 data class Quote(val ticker: String, val price: BigDecimal) {
     lateinit var instant: Instant
