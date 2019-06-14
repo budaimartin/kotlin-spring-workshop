@@ -1,11 +1,9 @@
 package hcom.mobile.workshop.demostockquotes.generator
 
-import org.springframework.stereotype.Component
 import hcom.mobile.workshop.demostockquotes.domain.Quote
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.MathContext
 import java.util.*
