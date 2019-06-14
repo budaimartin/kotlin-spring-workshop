@@ -160,7 +160,7 @@ fun fetchQuotes() = flow {
 }
 ```
 
- * Unfortunately, there's no convinience method to emit collections, so we need `forEach` for that
+ * Unfortunately, there's no convenience method to emit collections, so we need `forEach` for that
  * Still no solution to avoid `while(true)`
 
 #### [Expose quotes](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#expose-quotes)
@@ -185,7 +185,7 @@ Currently, for the `/quotes/size={size}` endpoint, we have this:
 fun getQuotes(size: Int = 10) = quoteGenerator.fetchQuotes().take(size)
 ```
 
- * Nasty Kotlin doesn't let us give single values in annotations when the type is `Array<>`
+ * Nasty Kotlin doesn't let us set single values in annotations when the type is `Array<>`
  * We give a default value for the size _method_ parameter, however it fails with 500:
 
 ```
