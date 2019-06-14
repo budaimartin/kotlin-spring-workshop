@@ -142,3 +142,54 @@ fun fetchQuotes() = sequence {
 ```
 
 * Next time we will try [`generateSequence`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.sequences/generate-sequence.html) to avoid the ~good~ old `while(true)`, and find out something for delaying.
+
+### 2019.06.14.
+
+#### [Quote generator class (continued)](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#quote-generator-class)
+
+An idea came up that we should try [Flows instead of Sequence](https://medium.com/@elizarov/reactive-streams-and-kotlin-flows-bfd12772cda4), because we can use the `delay()` suspending function in it.
+
+```kotlin
+fun fetchQuotes() = flow {
+    while (true) {
+        generateQuotes().forEach {
+            emit(it)
+        }
+        delay(1000)
+    }
+}
+```
+
+ * Unfortunately, there's no convinience method to emit collections, so we need `forEach` for that
+ * Still no solution to avoid `while(true)`
+
+#### [Expose quotes](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#expose-quotes)
+
+The `QuoteGenerator` class needs to be injected for example with `@Autowired`. But this way ugly `lateinit var` is needed again to let the compiler know that uninitialized variable will be given value by Spring, before using it.
+
+```kotlin
+@Autowired
+lateinit var quoteGenerator: QuoteGenerator
+```
+
+Or we can use constructor injection:
+
+```kotlin
+class QuoteResource(val quoteGenerator: QuoteGenerator) { ... }
+```
+
+Currently, for the `/quotes/size={size}` endpoint, we have this:
+
+```kotlin
+@GetMapping("/quotes", produces = ["application/json"])
+fun getQuotes(size: Int = 10) = quoteGenerator.fetchQuotes().take(size)
+```
+
+ * Nasty Kotlin doesn't let us give single values in annotations when the type is `Array<>`
+ * We give a default value for the size _method_ parameter, however it fails with 500:
+
+```
+java.lang.IllegalStateException: Optional int parameter 'size' is present but cannot be translated into a null value due to being declared as a primitive type. Consider declaring it as object wrapper for the corresponding primitive type.
+```
+
+ * Also, response is empty JSON, because we don't collect the values of the Flow yet
