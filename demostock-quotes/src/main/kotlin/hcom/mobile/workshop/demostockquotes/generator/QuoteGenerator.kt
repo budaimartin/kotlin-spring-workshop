@@ -1,7 +1,9 @@
 package hcom.mobile.workshop.demostockquotes.generator
 
-import org.springframework.stereotype.Component
 import hcom.mobile.workshop.demostockquotes.domain.Quote
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.MathContext
 import java.util.*
@@ -26,14 +28,12 @@ class QuoteGenerator {
         Quote(it.ticker, newPrice, it.instant)
     }
 
-    fun fetchQuotes(): Sequence<Quote> {
-        //val quoteSequence = sequenceOf(*(generateQuotes().toTypedArray()))
-        return sequence {
-            while (true) {
-                yieldAll(generateQuotes())
+    fun fetchQuotes() = flow {
+        while (true) {
+            generateQuotes().forEach {
+                emit(it)
             }
+            delay(1000)
         }
-
-        //return sequence
     }
 }
