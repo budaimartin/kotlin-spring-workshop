@@ -193,3 +193,53 @@ java.lang.IllegalStateException: Optional int parameter 'size' is present but ca
 ```
 
  * Also, response is empty JSON, because we don't collect the values of the Flow yet
+
+### 2019.06.26.
+
+#### [Expose quotes (continued)](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#expose-quotes)
+
+We raised the Spring Boot version to 2.2.0.M3 in order to get the experimental Flow support. However, we had to realize that default method parameters are currently not supported in Spring controllers.
+
+Final version looks like this:
+
+```kotlin
+@GetMapping("/quotes?size={size}", produces = ["application/json"])
+fun getQuotes(@RequestParam(required = false, name = "size", defaultValue = "10") size: Int) =
+        quoteGenerator.fetchQuotes().take(size)
+```
+
+The streaming endpoint uses the infinite Flow, no need to convert to Flux!
+
+```kotlin
+@GetMapping("/quotes", produces = ["application/stream+json"])
+fun getQuotesStream() = quoteGenerator.fetchQuotes()
+```
+
+#### [Replace RestController with RouterFunction and Handler](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#replace-restcontroller-with-routerfunction-and-handler)
+
+We managed to replace `EchoResource` and `HelloResource` with routers. Currently it looks like this:
+
+```kotlin
+@Bean
+fun mainRouter() = router {
+    POST("/echo") {
+        ok().body(it.bodyToMono<String>())
+    }
+	
+    GET("/hello-world") {
+        ok().syncBody("Hello")
+    }
+
+    GET("/quotes").nest {
+        accept(MediaType.APPLICATION_STREAM_JSON) {
+            ok().body(qouteGenerator.fetchQuotes().asPublisher())
+        }
+    }
+}
+```
+
+ * There is a generic `bodyToMono` extension function for `ServerRequest`
+ * We are going to nest two `accept` branches under `GET("/quotes")` to choose between the streaming and batch `/quotes` endpoints
+ * `asPublisher()` creates a Publisher from Flow, but when we tried it out, the browser didn't load. We assume that it does the transformation _eagerly_, which is not a good idea for potentially infinite data.
+
+We are going to find out a solution to expose our infinite Flow on our next session.
