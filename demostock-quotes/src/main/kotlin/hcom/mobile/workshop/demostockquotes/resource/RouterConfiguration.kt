@@ -1,6 +1,7 @@
 package hcom.mobile.workshop.demostockquotes.resource
 
 import hcom.mobile.workshop.demostockquotes.generator.QuoteGenerator
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.reactive.flow.asPublisher
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -27,9 +28,17 @@ class RouterConfiguration {
         }
 
         GET("/quotes").nest {
+            accept(MediaType.APPLICATION_JSON) {
+                ok().body(qouteGenerator.fetchQuotes()
+                        .take(Integer.valueOf(it.queryParam("size")
+                                .orElse("5")))
+                        .asPublisher())
+            }
             accept(MediaType.APPLICATION_STREAM_JSON) {
+                // FIXME gets stuck when called, see https://github.com/Kotlin/kotlinx.coroutines/issues/1324
                 ok().body(qouteGenerator.fetchQuotes().asPublisher())
             }
         }
+
     }
 }

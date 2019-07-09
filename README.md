@@ -243,3 +243,26 @@ fun mainRouter() = router {
  * `asPublisher()` creates a Publisher from Flow, but when we tried it out, the browser didn't load. We assume that it does the transformation _eagerly_, which is not a good idea for potentially infinite data.
 
 We are going to find out a solution to expose our infinite Flow on our next session.
+
+### 2019.07.05.
+
+#### [Replace RestController with RouterFunction and Handler (continued)](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#replace-restcontroller-with-routerfunction-and-handler)
+
+We added the other branch under the `"/quotes"` part, with the batch request of Quotes, but didn't find a solution for the Flow vs. Flux problem mentioned above.
+
+```kotlin
+GET("/quotes").nest {
+    accept(MediaType.APPLICATION_JSON) {
+        ok().body(qouteGenerator.fetchQuotes()
+                .take(Integer.valueOf(it.queryParam("size")
+                        .orElse("5")))
+                .asPublisher())
+    }
+    accept(MediaType.APPLICATION_STREAM_JSON) {
+        // FIXME gets stuck when called
+        ok().body(qouteGenerator.fetchQuotes().asPublisher())
+    }
+}
+```
+
+_We have raised an issue on the Kotlin coroutines repo: https://github.com/Kotlin/kotlinx.coroutines/issues/1324. The code snippet above will be updated when there is a solution._
