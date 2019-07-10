@@ -240,7 +240,7 @@ fun mainRouter() = router {
 
  * There is a generic `bodyToMono` extension function for `ServerRequest`
  * We are going to nest two `accept` branches under `GET("/quotes")` to choose between the streaming and batch `/quotes` endpoints
- * `asPublisher()` creates a Publisher from Flow, but when we tried it out, the browser didn't load. We assume that it does the transformation _eagerly_, which is not a good idea for potentially infinite data.
+ * `asPublisher()` creates a Publisher from Flow, but when we tried it out, the browser didn't load. ~We assume that it does the transformation _eagerly_, which is not a good idea for potentially infinite data.~ _It turned out that it was caused by the missing `.contentType(MediaType.APPLICATION_STREAM_JSON)` part._
 
 We are going to find out a solution to expose our infinite Flow on our next session.
 
