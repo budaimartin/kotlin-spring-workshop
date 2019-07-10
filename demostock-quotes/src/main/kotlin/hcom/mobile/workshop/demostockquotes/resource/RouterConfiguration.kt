@@ -35,8 +35,8 @@ class RouterConfiguration {
                         .asPublisher())
             }
             accept(MediaType.APPLICATION_STREAM_JSON) {
-                // FIXME gets stuck when called, see https://github.com/Kotlin/kotlinx.coroutines/issues/1324
-                ok().body(qouteGenerator.fetchQuotes().asPublisher())
+                ok().contentType(MediaType.APPLICATION_STREAM_JSON)
+                        .body(qouteGenerator.fetchQuotes().asPublisher())
             }
         }
 

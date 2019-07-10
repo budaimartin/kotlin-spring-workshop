@@ -259,10 +259,10 @@ GET("/quotes").nest {
                 .asPublisher())
     }
     accept(MediaType.APPLICATION_STREAM_JSON) {
-        // FIXME gets stuck when called
-        ok().body(qouteGenerator.fetchQuotes().asPublisher())
+        ok().contentType(MediaType.APPLICATION_STREAM_JSON)
+		    .body(qouteGenerator.fetchQuotes().asPublisher())
     }
 }
 ```
 
-_We have raised an issue on the Kotlin coroutines repo: https://github.com/Kotlin/kotlinx.coroutines/issues/1324. The code snippet above will be updated when there is a solution._
+I have raised an [issue](https://github.com/Kotlin/kotlinx.coroutines/issues/1324) on the Kotlin coroutines repo and they informed me that this is not a Kotlin coroutines but a Spring issue, as it is reproducable with Flux. It turned out that it was caused by the missing `.contentType(MediaType.APPLICATION_STREAM_JSON)` part.
