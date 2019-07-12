@@ -266,3 +266,82 @@ GET("/quotes").nest {
 ```
 
 I have raised an [issue](https://github.com/Kotlin/kotlinx.coroutines/issues/1324) on the Kotlin coroutines repo and they informed me that this is not a Kotlin coroutines but a Spring issue, as it is reproducable with Flux. It turned out that it was caused by the missing `.contentType(MediaType.APPLICATION_STREAM_JSON)` part.
+
+### 2019.07.12.
+
+#### Experiments with Bean definition DSL (bonus task)
+
+We decided to try out Spring's [bean definition DSL](https://docs.spring.io/spring-framework/docs/5.0.0.BUILD-SNAPSHOT/spring-framework-reference/kotlin.html#bean-definition-dsl) instead of good old annotation-based configuration.
+
+_Beanz.kt_
+
+```kotlin
+fun beanz() = beans {
+    bean<QuoteGenerator>() // <1>
+    bean { // <2>
+        router {
+            POST("/echo") {
+                ok().body(it.bodyToMono<String>())
+            }
+            GET("/hello-world") {
+                ok().syncBody("Hello")
+            }
+            GET("/quotes").nest {
+                accept(MediaType.APPLICATION_JSON) {
+                    ok().body(ref<QuoteGenerator>().fetchQuotes() // <3>
+                        .take(Integer.valueOf(it.queryParam("size")
+                            .orElse("5")))
+                        .asPublisher())
+                }
+                accept(MediaType.APPLICATION_STREAM_JSON) {
+                    ok().contentType(MediaType.APPLICATION_STREAM_JSON)
+                        .body(ref<QuoteGenerator>().fetchQuotes().asPublisher())
+                }
+            }
+        }
+    }
+}
+```
+
+ 1. If no further configuration needed, beans can be defined by the generic `bean<>()` function
+ 2. Otherwise, return type is infered, just like the return type of any other Kotlin lambda
+ 3. It is possible to reference other beans by type or by name using `ref<>()`
+
+Since Spring Boot does not support this approach out of box, we need to implement and register an `ApplicationContextInitializer<GenericApplicationContext>`.
+
+```kotlin
+class QuotesApplicationInitializer : ApplicationContextInitializer<GenericApplicationContext> {
+    override fun initialize(context: GenericApplicationContext) = beanz().initialize(context)
+}
+```
+
+Retistering this listener can be done in `application.properties`:
+
+```
+context.initializer.classes=hcom.mobile.workshop.demostockquotes.resource.QuotesApplicationInitializer
+```
+
+##### Ambiguous bean problem
+
+An idea came up about ambiguous beans. First, we forgot to remove the `@Controller` annotation from `QuoteGenerator`, and the application context was still able to build up despite of multiple bean definitions (the bean picked up by component scan and the one defined in the `beanz()` function).
+
+It turned out that our solution is error prone: this problem is only revealed when we call the endpoint:
+
+```
+No qualifying bean of type 'hcom.mobile.workshop.demostockquotes.generator.QuoteGenerator' available: expected single matching bean but found 2: hcom.mobile.workshop.demostockquotes.generator.QuoteGenerator#0,quoteGenerator
+```
+
+When we extract `ref<QuoteGenerator>()` to a local variable, it is resolved eagerly, i.e. during startup time.
+
+```kotlin
+bean {
+    val generator = ref<QuoteGenerator>()
+    router {
+        // ...
+        accept(MediaType.APPLICATION_STREAM_JSON) {
+            ok().contentType(MediaType.APPLICATION_STREAM_JSON)
+                .body(generator.fetchQuotes().asPublisher())
+        }
+    }
+}
+```
