@@ -3,13 +3,10 @@ package hcom.mobile.workshop.demostockquotes.generator
 import hcom.mobile.workshop.demostockquotes.domain.Quote
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
-import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.MathContext
 import java.util.*
 
-
-@Component
 class QuoteGenerator {
     private val mathContext = MathContext(2)
     private val random = Random()
