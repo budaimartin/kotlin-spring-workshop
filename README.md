@@ -323,7 +323,7 @@ context.initializer.classes=hcom.mobile.workshop.demostockquotes.resource.Quotes
 
 ##### Ambiguous bean problem
 
-An idea came up about ambiguous beans. First, we forgot to remove the `@Controller` annotation from `QuoteGenerator`, and the application context was still able to build up despite of multiple bean definitions (the bean picked up by component scan and the one defined in the `beanz()` function).
+An idea came up about ambiguous beans. At first we forgot to remove the `@Controller` annotation from `QuoteGenerator`, and the application context was still able to build up despite of multiple bean definitions (the bean picked up by component scan and the one defined in the `beanz()` function).
 
 It turned out that our solution is error prone: this problem is only revealed when we call the endpoint:
 
