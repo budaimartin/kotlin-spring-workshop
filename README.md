@@ -345,3 +345,88 @@ bean {
     }
 }
 ```
+
+### 2019.07.23.
+
+#### [Testing](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#testing)
+
+We have written some integration test for our application.
+
+```kotlin
+@RunWith(SpringRunner::class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class DemostockQuotesApplicationTests {
+    @Autowired
+    lateinit var webTestClient: WebTestClient
+    // ...
+}
+```
+
+ * We used JUnit and Spring Boot test, just like in Java
+ * Since we are in a WebFlux environment, we automatically get a fully set-up `WebTestClient`, ready to be autowired
+
+```kotlin
+@Test
+fun `Test Echo endpoint returns an echo`() {
+    webTestClient.post()
+       .uri("/echo")
+       .syncBody("Echo this")
+       .exchange()
+       .expectBody<String>()
+       .isEqualTo("Echo this")
+}
+```
+
+ * Kotlin lets us use any string literal between backticks as identifier. This is very useful for nicely formatted test method names!
+ * Kotlin is [having a hard time infering types](https://discuss.kotlinlang.org/t/type-interference-issue-with-the-webflux-webtestclient-and-kotlin/3880) when using `WebTestClient`. Fortunately there are extension methods for workaround! You can write `expectBody<String>()` instead of `expectBody(String::class)`.
+
+```kotlin
+@Test
+fun `Test quotes endpoint should return expected amount of quotes`() {
+    webTestClient.get()
+        .uri("/quotes?size=2")
+        .exchange()
+        .expectBodyList<Quote>()
+        .hasSize(2)
+}
+```
+
+ * There is also `expectBodyList<>()`!
+ 
+```kotlin
+@Test
+fun `Test quotes endpoint should return quotes`() {
+    val collectMonoList = webTestClient
+            .get()
+            .uri("/quotes")
+            .accept(MediaType.APPLICATION_STREAM_JSON)
+            .exchange()
+            .returnResult<Quote>()
+            .responseBody.take(30)
+            .collectList()
+            .block()
+
+    assertThat(collectMonoList?.size).isEqualTo(30)
+    assertThat(collectMonoList).allSatisfy {
+        assertThat(it.price).isPositive()
+    }
+}
+```
+
+ * ...and also `returnResult<>()`!
+ * We collected the `Flux` to a list first and did some AssertJ assertions on it.
+ * Notice how beutiful the last one is with Kotlin-style lambda!
+ * The assertion is also possible with `StepVerifier`, like below:
+
+```kotlin
+val result = webTestClient
+       .get()
+       .uri("/quotes")
+       .accept(MediaType.APPLICATION_STREAM_JSON)
+       .exchange()
+       .returnResult<Quote>()
+       .responseBody.take(30)
+StepVerifier.create(result)
+       .thenConsumeWhile { it.price.signum() > 0 }
+       .verifyComplete()
+```
