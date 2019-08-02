@@ -58,7 +58,88 @@ RestController is fun, but let's take a look at RouterFunctions too.
 
 ### Create Trading Service application
 
-_To be continued..._
+#### First steps
+
+Generate the project with [Spring Initializr](https://start.spring.io) like the previous one. Make sure to include the following starters:
+* Reactive Web
+* Thymeleaf
+* Reactive Mongo
+
+Also, to be able to use the datastore, include this dependency for embedded Mongo DB:
+
+```xml
+<dependency>
+  <groupId>de.flapdoodle.embed</groupId>
+  <artifactId>de.flapdoodle.embed.mongo</artifactId>
+</dependency>
+```
+
+#### Create the TradingUser entity class
+
+* Like in [Java before](https://github.com/budaimartin/webflux-workshop/blob/master/trading-service/src/main/java/io/spring/workshop/tradingservice/TradingUser.java), but don't forget that you're using Kotlin!
+
+#### Create repository for TradingUser
+
+* Create an interface that extends `ReactiveMongoRepository`.
+* Add a `findByUserName(String userName)` method that returns a single `TradingUser` instance.
+
+#### Fill repository with initial data
+
+* Create a `CommandLineRunner` or `ApplicationListener` that inserts some users to the database. Be creative at names! :)
+  * NB! Remember that you should run it blocking to make effect!
+
+#### Expose users
+
+* `GET /users` endpoint returns all users in the repository.
+* `GET /users/{username}` returns a single user with the given username, or `404 NOT_FOUND` when it doesn't exist.
+
+#### Testing
+
+* Write some integration tests for the application. See [UserControllerTest](https://github.com/budaimartin/webflux-workshop/blob/master/trading-service/src/test/java/io/spring/workshop/tradingservice/UserControllerTest.java) if you're stuck.
+
+#### Prepare for HTML view rendering
+
+* Add the following dependencies:
+
+```xml
+<dependency>
+  <groupId>org.webjars</groupId>
+  <artifactId>bootstrap</artifactId>
+  <version>3.3.7</version>
+</dependency>
+<dependency>
+  <groupId>org.webjars</groupId>
+  <artifactId>highcharts</artifactId>
+  <version>5.0.8</version>
+</dependency>
+```
+
+* Put the following HTML templates in the `src/main/resources/templates` folder:
+  * [index.html](https://raw.githubusercontent.com/budaimartin/kotlin-spring-workshop/own-solution/shared/index.html)
+  * [quotes.html](https://raw.githubusercontent.com/budaimartin/kotlin-spring-workshop/own-solution/shared/quotes.html)
+
+#### Render home page
+
+* Implement the `GET /` (root) endpoint that should render the _index.html_ template.
+  * MIME type is `text/html`
+  * There is a model attribute with the name of `users` that contain every user located in the repository
+
+#### Render quotes stream page
+
+* Copy the `Quote` data class from the Quotes application.
+* Implement the `GET /quotes` endpoint that renders the _quotes.html_ template.
+  * MIME type is `text/html`
+* Implement the `GET /quotes/feed` endpoint that feeds the quotes for the view.
+  * MIME type is `text/event-stream`
+  * Body should be the infinite stream returned by Quotes application's `/quotes` endpoint
+
+#### Launch the app
+
+* Launch both applications.
+* `http://localhost:8080/` should show all users.
+* Navigate to `http://localhost:8080/quotes` to see a fancy diagram of the quotes stream.
+
+_This is the end of the part that follows the original Spring WebFlux workshop. The websocket part is omitted intentionally._
 
 ## Second part (under planning)
 
