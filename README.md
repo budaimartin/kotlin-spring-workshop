@@ -430,3 +430,64 @@ StepVerifier.create(result)
        .thenConsumeWhile { it.price.signum() > 0 }
        .verifyComplete()
 ```
+
+### 2019.08.08.
+
+#### [First steps](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#first-steps)
+
+We have created the application with the required dependencies. However, the Initializr still created the pom with Java 8 version and the UI didn't let us choose Kotlin version either. So we modified them to 11 and 1.3.31.
+
+#### [Create the TradingUser entity class](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#create-the-tradinguser-entity-class)
+
+We could create this as an ordinary data class:
+
+```kotlin
+@Document
+data class TradingUser(@Id var id: String?, var userName: String, var fullName: String) {
+    constructor(userName: String, fullName: String) : this(null, userName, fullName)
+}
+```
+
+* Property annotations, such as `@Id` must be before `var`
+* Mongo DB will handle entity ID generation, so it must be nullable
+
+#### [Create repository for TradingUser](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#create-repository-for-tradinguser)
+
+Nothing special here, just like we would do in Java:
+
+```kotlin
+interface TradingUserRepository : ReactiveMongoRepository<TradingUser, String> {
+    fun findByUserName(name: String): TradingUser
+}
+```
+
+We didn't test this method yet.
+
+#### [Fill repository with initial data](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#fill-repository-with-initial-data)
+
+We decided to go with the `ApplicationListener` approach and chose the `ApplicationReadyEvent` type to make sure it runs when the context is fully initialized and it won't run again later.
+
+```kotlin
+@Component
+class UserInitialiserListener(val userRepository: TradingUserRepository) : ApplicationListener<ApplicationReadyEvent> {
+    override fun onApplicationEvent(event: ApplicationReadyEvent) {
+        userRepository.saveAll(
+                listOf(TradingUser("Joco", "Pocok Joco"),
+                        TradingUser("Joci", "Poci Joci")))
+                .doOnNext { println(it) }
+                .subscribe()
+    }
+}
+
+```
+
+* The `saveAll` method accepts an `Iterable` instance, so we could use Kotlin's `listOf` factory method.
+* Subscribing to the Flux returned by `saveAll` makes sure that the insertion runs. An alternative for this could have been `blockLast` that blocks until the last element.
+
+Console output made sure that our entities have been saved:
+
+```
+2019-08-08 12:41:40.191  INFO 14852 --- [ntLoopGroup-2-2] org.mongodb.driver.connection            : Opened connection [connectionId{localValue:3, serverValue:3}] to localhost:49286
+TradingUser(id=5d4bfc64d947c237011e7dad, userName=Joco, fullName=Pocok Joco)
+TradingUser(id=5d4bfc64d947c237011e7dae, userName=Joci, fullName=Poci Joci)
+```
