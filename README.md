@@ -457,11 +457,9 @@ Nothing special here, just like we would do in Java:
 
 ```kotlin
 interface TradingUserRepository : ReactiveMongoRepository<TradingUser, String> {
-    fun findByUserName(name: String): TradingUser
+    fun findByUserName(name: String): Mono<TradingUser>
 }
 ```
-
-We didn't test this method yet.
 
 #### [Fill repository with initial data](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#fill-repository-with-initial-data)
 
@@ -491,3 +489,34 @@ Console output made sure that our entities have been saved:
 TradingUser(id=5d4bfc64d947c237011e7dad, userName=Joco, fullName=Pocok Joco)
 TradingUser(id=5d4bfc64d947c237011e7dae, userName=Joci, fullName=Poci Joci)
 ```
+
+### 2019.08.15.
+
+First we corrected `TradingUserRepositroy` so that it returns `Mono<TradingUser>`. We learned that in case of mismatching return type, a `ClassCastException` is thrown.
+
+```
+java.lang.ClassCastException: class reactor.core.publisher.MonoFlatMap cannot be cast to class hcom.mobile.workshop.tradingservice.domain.TradingUser
+```
+
+#### [Expose users](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#expose-users)
+
+Since we are using Spring Data, we get most CRUD operations out of box. Therefore, the `/users` endpoint is as simple as that almost-oneliner below.
+
+```kotlin
+@GetMapping("/users")
+fun getUsers() = userRepository.findAll()
+```
+
+The other endpoint, however, needs some tweaking. We found out that in case of missing entity an empty Mono is returned by `TradingUserRepositroy`. We couldn't map it to `404 NOT_FOUND` yet, but so far we have this:
+
+```kotlin
+@GetMapping("/users/{userName:.+}")
+fun getUserByUserName(@PathVariable userName: String) = userRepository.findByUserName(userName)
+    .switchIfEmpty(Mono.error(Exception("Nincs Joco :(")))
+```
+
+* Notice `:.+` after the path parameter. It allows us to use special characters in the path variable.
+* First, we tried [Mono.or()](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html#or-reactor.core.publisher.Mono-), because it was quite similar to `Optional.or()` at first sight. But as a result, the endpoint always returned an error, because it emits the data of the first _completing_ Mono and it's always will be `Mono.error()`.
+* The [Mono.switchIfEmpty()](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html#switchIfEmpty-reactor.core.publisher.Mono-) does exactly what we need: wait for the completion of the Mono and emit an alternative when there was no data.
+
+The current solution results in `500 INTERNAL_SERVER_ERROR`. On the next session we are going to map this exceptional case to a proper `404 NOT_FOUND`.
