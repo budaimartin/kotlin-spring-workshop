@@ -520,3 +520,78 @@ fun getUserByUserName(@PathVariable userName: String) = userRepository.findByUse
 * The [Mono.switchIfEmpty()](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html#switchIfEmpty-reactor.core.publisher.Mono-) does exactly what we need: wait for the completion of the Mono and emit an alternative when there was no data.
 
 The current solution results in `500 INTERNAL_SERVER_ERROR`. On the next session we are going to map this exceptional case to a proper `404 NOT_FOUND`.
+
+### 2019.08.23.
+
+#### [Expose users (continued)](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#expose-users)
+
+The final version of the _getUserByUserName_ endpoint looks like this:
+
+```kotlin
+fun getUserByUserName(@PathVariable userName: String) = userRepository.findByUserName(userName)
+        .switchIfEmpty(Mono.error(UserNotFoundException("User $userName not found! ¯\\_(ツ)_/¯")))
+```
+
+* Inside a String literal you can get the value of any variable by adding the `$` prefix to its name. (More complex expressions require the `${}` notation.)
+* We have introduced a custom exception when the user is not found.
+
+```kotlin
+class UserNotFoundException(message: String) : Exception(message)
+```
+
+Then we could use it in an exception handler method, just like we would do in WebMVC:
+
+```kotlin
+@ExceptionHandler(UserNotFoundException::class)
+@ResponseStatus(NOT_FOUND)
+fun handleUserNotFound(exception: UserNotFoundException) = exception.message
+```
+
+* The `@ExceptionHandler` annotation should get the type of the exception that is wrapped inside the Mono.
+* Error body will be the message of the exception.
+
+#### [Testing](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#testing-1)
+
+We started the implementation of some integration tests for the application. We managed to create one:
+
+```kotlin
+@Test
+fun `Get user should return a Joco if user name is Joco`() {
+    webTestClient.get()
+        .uri("/users/TestJoco")
+        .exchange()
+        .expectBody<TradingUser>()
+        .isEqualTo(tradingUser)
+}
+```
+
+We needed to make sure that when querying the database, the same entity is returned as `tradingUser`. Because ID-s are given by Mongo, we had two choices:
+
+1. Mock `TradingUserRepository`
+2. Since we use in-memory MongoDB, simply insert an instance beforehand and assign it to `tradingUser`
+
+The first one is quite problematic. Because of `UserInitialiserListener`, we should stub the `saveAll` method as well or else we would get `NullPointerException`. But we cannot do that because the listener runs as soon as the context gets ready, i.e. before any stubbing could be done in the test. The solution would be a separate `@Configuration` class with a mocked `TradingUserRepository` bean, but that's just overkill.
+
+Option _1/b_ was to use Spring profiles: make the `UserInitialiserListener` profile-dependent and launch the integration test with another one. We agreed that we should handle the listener as a first-class citizen in the application and shouldn't get rid of it in the tests.
+
+Therefore, we went with the second option.
+
+```kotlin
+@Autowired
+lateinit var tradingUserRepository: TradingUserRepository
+
+lateinit var tradingUser : TradingUser
+
+@Before
+fun init() {
+    tradingUser = tradingUserRepository.save(TradingUser("TestJoco", "Joco Test"))
+        .block()!!
+}
+```
+
+It works, but has some not so nice features.
+
+* Line `.block()!!` smells both from Reactive and Kotlin perspective.
+* Since the `@Before` method runs as many times as tests we have, the entity gets inserted multiple times.
+
+We are going after these on the next session.
