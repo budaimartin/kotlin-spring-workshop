@@ -595,3 +595,9 @@ It works, but has some not so nice features.
 * Since the `@Before` method runs as many times as tests we have, the entity gets inserted multiple times.
 
 We are going after these on the next session.
+
+### 2019.09.12.
+
+On this session we have tried several solutions to make the integration test nicer, but didn't manage to find an ultimate solution. But we found [this article](https://phauer.com/2018/best-practices-unit-testing-kotlin/) that can be useful in the future.
+
+We abandon the test task and will proceed to the next one.
