@@ -601,3 +601,42 @@ We are going after these on the next session.
 On this session we have tried several solutions to make the integration test nicer, but didn't manage to find an ultimate solution. But we found [this article](https://phauer.com/2018/best-practices-unit-testing-kotlin/) that can be useful in the future.
 
 We abandon the test task and will proceed to the next one.
+
+### 2019.09.24.
+
+#### Revisiting testing
+
+I came across with [an article](https://medium.com/sodalabs/painless-unit-testing-with-kotlintest-mockk-8854d549b96b) about testing with [Kotlintest](https://github.com/kotlintest/kotlintest) and [MockK](https://github.com/mockk/mockk). We have given it a try and implemented some unit tests, but integration tests didn't work yet because we lose most of Spring annotations and couldn't inject a `WebTestClient` bean. As a side project, we might revisit this and find a solution for this problem. Until that only the unit tests are available as an example at `hcom.mobile.workshop.tradingservice.UsersControllerTest`.
+
+#### [Render home page](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#render-home-page)
+
+We used Spring MVC's `@Controller` and injected a `Model` instance to populate the model attribute. Since we are in a WebFlux environment, we are allowed to put Mono and Flux in model attributes.
+
+_IndexController_
+
+```kotlin
+@Controller
+class IndexController(var userRepository: TradingUserRepository) {
+    @GetMapping
+    fun index(model: Model): String {
+        model.addAttribute("users", userRepository.findAll())
+        return "index"
+    }
+}
+```
+
+#### [Render quotes stream page](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#render-quotes-stream-page)
+
+For the first endpoint, there's nothing special. Maybe it worth to mention that since only the view name should be returned, it can be done with an (almost) one-liner.
+
+_QuotesController_
+
+```kotlin
+@Controller
+class QuotesController {
+    @GetMapping("/quotes")
+    fun quotes() = "quotes"
+}
+```
+
+Now only the other endpoint is left that calls over the Quotes application providing a (potentially) infinite stream of quotes to display.
