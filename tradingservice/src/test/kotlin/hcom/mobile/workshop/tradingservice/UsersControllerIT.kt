@@ -13,7 +13,7 @@ import org.springframework.test.web.reactive.server.expectBody
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @RunWith(SpringRunner::class)
-class UsersControllerIT() {
+class UsersControllerIT {
 
     @Autowired
     lateinit var tradingUserRepository: TradingUserRepository
