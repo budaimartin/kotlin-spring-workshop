@@ -17,12 +17,12 @@ class QuotesController {
 
 @RestController
 class QuotesFeedController() {
-    @GetMapping("/quotes/feed")
+    @GetMapping(path = ["/quotes/feed"],  produces = ["text/event-stream"])
     fun quotesFeed(): Flux<Quote> {
 
-        val webclient = WebClient.builder()
-                .baseUrl("localhost:8081")
-                .build()
+        val webclient = WebClient.create("http://localhost:8081")
+
+
         return webclient.get()
                 .uri("/quotes")
                 .accept(MediaType.APPLICATION_STREAM_JSON)

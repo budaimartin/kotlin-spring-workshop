@@ -640,3 +640,43 @@ class QuotesController {
 ```
 
 Now only the other endpoint is left that calls over the Quotes application providing a (potentially) infinite stream of quotes to display.
+
+### 2019.10.04.
+
+#### [Render quotes stream page (continued)](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#render-quotes-stream-page)
+
+We implemented the quotes feed endpoint which calls the Demostock Quotes application and retrieves the stream of quotes.
+
+_QuotesFeedController_
+
+```kotlin
+@RestController
+class QuotesFeedController {
+    @GetMapping(path = ["/quotes/feed"],  produces = ["text/event-stream"])
+    fun quotesFeed(): Flux<Quote> {
+        val webclient = WebClient.create("http://localhost:8081")
+        return webclient.get()
+                .uri("/quotes")
+                .accept(MediaType.APPLICATION_STREAM_JSON)
+                .retrieve()
+                .bodyToFlux()
+    }
+}
+```
+
+ * We could use `@RestController` again, because we are not rendering a view, but return the request body straight away.
+ * `WebClient` needs the schema and the port as well when giving the base URL.
+ * The `retrieve()` method lets us build up a specification what to do with the response. Now we only need to return its body.
+ 
+#### [Launch the app](https://github.com/budaimartin/kotlin-spring-workshop/blob/master/tasks.md#launch-the-app)
+
+After launching both applications and navigating to the `http://localhost:8080/quotes` address, we realized that we made a bug in `QuoteGenerator`. Accidantely we always set the same timestamp to the quotes, so the graph didn't work properly. We removed the third parameter from the constructor call, so it is always set to the default value, `Instant.now()`.
+
+```kotlin
+fun generateQuotes() = prices.map {
+    val newPrice = it.price.multiply(BigDecimal(0.05 * this.random.nextDouble()), this.mathContext)
+    Quote(it.ticker, newPrice)
+}
+```
+
+![graph](/graph.PNG)

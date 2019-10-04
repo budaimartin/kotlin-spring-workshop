@@ -22,7 +22,7 @@ class QuoteGenerator {
 
     fun generateQuotes() = prices.map {
         val newPrice = it.price.multiply(BigDecimal(0.05 * this.random.nextDouble()), this.mathContext)
-        Quote(it.ticker, newPrice, it.instant)
+        Quote(it.ticker, newPrice)
     }
 
     fun fetchQuotes() = flow {
